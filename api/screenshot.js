@@ -1,31 +1,22 @@
-const chromium = require("chrome-aws-lambda");
+const puppeteer = require('puppeteer');
 
 module.exports = async (req, res) => {
-  let browser = null;
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).json({ error: 'URL is required' });
+  }
 
   try {
-    const executablePath = await chromium.executablePath;
-
-    browser = await chromium.puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: { width: 1280, height: 720 },
-      executablePath,
-      headless: chromium.headless,
-    });
-
+    const browser = await puppeteer.launch();
     const page = await browser.newPage();
-    await page.goto("https://stockcharts.com/h-sc/ui?s=$CPCE&p=D&yr=1&mn=0&dy=0&id=p77689813562&a=500931902", {
-      waitUntil: "networkidle2",
-    });
-
-    const screenshot = await page.screenshot({ type: "png" });
-
+    await page.goto(url);
+    const screenshotBuffer = await page.screenshot();
     await browser.close();
-    res.setHeader("Content-Type", "image/png");
-    res.status(200).send(screenshot);
-  } catch (err) {
-    console.error("❌ Puppeteer error:", err.message);
-    if (browser) await browser.close();
-    res.status(500).send("Ошибка скриншота: " + err.message);
+
+    res.setHeader('Content-Type', 'image/png');
+    res.status(200).send(screenshotBuffer);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to capture screenshot' });
   }
 };

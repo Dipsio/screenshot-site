@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/screenshot.js": {
-      "memory": 512,
-      "maxDuration": 10,
-      "runtime": "nodejs18.x"
-    }
-  }
+  "rewrites": [{ "source": "/api/screenshot", "destination": "/api/screenshot.js" }]
 }
+
