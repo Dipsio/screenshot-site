@@ -1,4 +1,0 @@
-{
-  "rewrites": [{ "source": "/api/screenshot", "destination": "/api/screenshot.js" }]
-}
-
