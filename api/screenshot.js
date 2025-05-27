@@ -1,32 +1,31 @@
-const chromium = require("chrome-aws-lambda");
-const puppeteer = require("puppeteer-core");
+// api/screenshot.ts
+import { NowRequest, NowResponse } from '@vercel/node'
+import chromium from 'chrome-aws-lambda' // или playwright-aws-lambda
 
-module.exports = async (req, res) => {
-  let browser = null;
+export default async (req: NowRequest, res: NowResponse) => {
+  const url = req.query.url as string
 
+  if (!url || !/^https?:\/\//.test(url)) {
+    res.status(400).json({ error: 'Invalid URL' })
+    return
+  }
+
+  let browser = null
   try {
-    browser = await puppeteer.launch({
+    browser = await chromium.puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 1280, height: 720 },
       executablePath: await chromium.executablePath,
       headless: chromium.headless,
-    });
-
-    const page = await browser.newPage();
-    await page.goto("https://wpexperts.io", {
-      waitUntil: "networkidle2",
-    });
-
-    const screenshot = await page.screenshot({ type: "png" });
-
-    await browser.close();
-
-    res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate");
-    res.status(200).send(screenshot);
-  } catch (err) {
-    console.error(err);
-    if (browser) await browser.close();
-    res.status(500).send("Ошибка при генерации скриншота");
+    })
+    const page = await browser.newPage()
+    await page.goto(url, { waitUntil: 'networkidle2' })
+    const screenshot = await page.screenshot({ type: 'png' })
+    res.setHeader('Content-Type', 'image/png')
+    res.send(screenshot)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  } finally {
+    if (browser) await browser.close()
   }
-};
+}
