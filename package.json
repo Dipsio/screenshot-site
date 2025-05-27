@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "name": "screenshot-site",
+  "version": "1.0.0",
+  "dependencies": {
+    "puppeteer-core": "^21.3.8",
+    "chrome-aws-lambda": "^10.1.0"
+  }
+}
