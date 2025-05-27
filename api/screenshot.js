@@ -1,22 +1,32 @@
-const puppeteer = require('puppeteer');
+const chromium = require("chrome-aws-lambda");
+const puppeteer = require("puppeteer-core");
 
 module.exports = async (req, res) => {
-  const { url } = req.query;
-
-  if (!url) {
-    return res.status(400).json({ error: 'URL is required' });
-  }
+  let browser = null;
 
   try {
-    const browser = await puppeteer.launch();
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: { width: 1280, height: 720 },
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
+    });
+
     const page = await browser.newPage();
-    await page.goto(https://wpexperts.io);
-    const screenshotBuffer = await page.screenshot();
+    await page.goto("https://wpexperts.io", {
+      waitUntil: "networkidle2",
+    });
+
+    const screenshot = await page.screenshot({ type: "png" });
+
     await browser.close();
 
-    res.setHeader('Content-Type', 'image/png');
-    res.status(200).send(screenshotBuffer);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to capture screenshot' });
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate");
+    res.status(200).send(screenshot);
+  } catch (err) {
+    console.error(err);
+    if (browser) await browser.close();
+    res.status(500).send("Ошибка при генерации скриншота");
   }
 };
